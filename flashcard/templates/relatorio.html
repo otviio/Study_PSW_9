@@ -20,6 +20,16 @@
         <div class="row">
             <div class="col-md">
                 <p class="fonte-secundaria">{{desafio.titulo}}</p>
+                {% for categoria in categoria_relatorio  %}
+                    <span class="badge-categoria">{{categoria}}</span>
+                {% endfor %}
+                {% if desafio.get_dificuldade_display == 'Difícil' %}
+                  <span class="badge-categoria bg-danger">{{desafio.get_dificuldade_display}}</span>
+                {% elif desafio.get_dificuldade_display == 'Médio' %}
+                  <span class="badge-categoria bg-warning">{{desafio.get_dificuldade_display}}</span>
+                {% else %}
+                  <span class="badge-categoria bg-success">{{desafio.get_dificuldade_display}}</span>
+                {% endif %}
                 <hr>
                 <canvas id="grafico1"></canvas>
             </div>

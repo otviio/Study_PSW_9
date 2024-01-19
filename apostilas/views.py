@@ -6,6 +6,9 @@ from django.contrib import messages
 
 
 def adicionar_apostilas(request):
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     if request.method == 'GET':
         apostilas = Apostila.objects.filter(user=request.user)
         # TODO: criar as tags
@@ -24,6 +27,9 @@ def adicionar_apostilas(request):
         return redirect('/apostilas/adicionar_apostilas/')
 
 def apostila(request, id):
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     apostila = Apostila.objects.get(id=id)
     views_totais = ViewApostila.objects.filter(apostila=apostila).count()
     views_unicas = ViewApostila.objects.filter(apostila=apostila).values('ip').distinct().count()

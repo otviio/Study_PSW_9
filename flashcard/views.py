@@ -72,6 +72,9 @@ def deletar_flashcard(request, id):
         return redirect('/flashcard/novo_flashcard/')
     
 def iniciar_desafio(request):
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     if request.method == 'GET':
         categorias = Categoria.objects.all()
         dificuldades = Flashcard.DIFICULDADE_CHOICES
@@ -81,7 +84,6 @@ def iniciar_desafio(request):
         categorias = request.POST.getlist('categoria')
         dificuldade = request.POST.get('dificuldade')
         qtd_perguntas = request.POST.get('qtd_perguntas')
-
         desafio = Desafio(
             user=request.user,
             titulo=titulo,
@@ -103,9 +105,9 @@ def iniciar_desafio(request):
         )
 
         if flashcards.count() < int(qtd_perguntas):
-            # tratar para escolher depois
+            messages.add_message(request, constants.ERROR, 'Número de flashcards insuficientes, escolha uma quantidade menor de questões')
             return redirect('/flashcard/iniciar_desafio/')
-
+        
         flashcards = flashcards[: int(qtd_perguntas)]
 
         for f in flashcards:
@@ -120,29 +122,46 @@ def iniciar_desafio(request):
         return redirect('/flashcard/listar_desafio/')
 
 def listar_desafio(request):
+    if not request.user.is_authenticated:
+            return redirect('/usuarios/logar')
+        
+    if request.method == 'GET':
         desafios = Desafio.objects.filter(user=request.user)
+        categorias = Categoria.objects.all()
+        dificuldades = Flashcard.DIFICULDADE_CHOICES
+        flashcards = Flashcard.objects.filter(user=request.user)
+        categoria_filtrar = request.GET.get('categoria')
+        dificuldade_filtrar = request.GET.get('dificuldade')
+
         # TODO: DESENVOLVER OS STATUS
         # TODO: DESENVOLVER OS FILTROS
-        return render(request, 'listar_desafio.html', {'desafios': desafios})
+
+        return render(request, 'listar_desafio.html', {'desafios': desafios, 'categorias': categorias, 'dificuldades': dificuldades})
 
 def desafio(request, id):
-    desafio = Desafio.objects.get(id=id)
-    if not desafio.user == request.user:
-        raise Http404()
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     if request.method == 'GET':
+        categorias = Categoria.objects.all()
+        desafio = Desafio.objects.get(id=id)
         acertos = desafio.flashcards.filter(respondido=True).filter(acertou=True).count()
         erros = desafio.flashcards.filter(respondido=True).filter(acertou=False).count()
         faltantes = desafio.flashcards.filter(respondido=False).count()
-        return render(request, 'desafio.html', {'desafio': desafio, 'acertos':acertos, 'erros': erros, 'faltantes': faltantes})
+        
+
+        return render(request, 'desafio.html', {'desafio': desafio, 'acertos':acertos, 'erros': erros, 
+                                                'faltantes': faltantes, 
+                                                'categorias': categorias})
     
 def responder_flashcard(request, id):
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     flashcard_desafio = FlashcardDesafio.objects.get(id=id)
     acertou = request.GET.get('acertou')
     desafio_id = request.GET.get('desafio_id')
 
-    if not flashcard_desafio.flashcard.user == request.user:
-        raise Http404
-    
     flashcard_desafio.respondido = True
     flashcard_desafio.acertou = True if acertou == '1' else False
     flashcard_desafio.save()
@@ -150,8 +169,12 @@ def responder_flashcard(request, id):
     return redirect(f'/flashcard/desafio/{desafio_id}/')
 
 def relatorio(request, id):
+    if not request.user.is_authenticated:
+        return redirect('/usuarios/logar')
+    
     desafio = Desafio.objects.get(id=id)
-
+    desafios = Desafio.objects.filter(user=request.user)
+    categoria_relatorio = Categoria.objects.all()
     acertos = desafio.flashcards.filter(acertou=True).count()
     erros = desafio.flashcards.filter(acertou=False).count()
     dados = [acertos, erros]
@@ -168,4 +191,5 @@ def relatorio(request, id):
     #TODO: fazer o ranking
     return render(request, 'relatorio.html', {'desafio': desafio, 'dados': dados, 
                                               'categorias': name_categoria, 
-                                              'dados2': dados2})
+                                              'dados2': dados2, 
+                                              'categoria_relatorio': categoria_relatorio})
