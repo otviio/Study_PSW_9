@@ -173,7 +173,7 @@ def relatorio(request, id):
         return redirect('/usuarios/logar')
     
     desafio = Desafio.objects.get(id=id)
-    desafios = Desafio.objects.filter(user=request.user)
+    
     categoria_relatorio = Categoria.objects.all()
     acertos = desafio.flashcards.filter(acertou=True).count()
     erros = desafio.flashcards.filter(acertou=False).count()
